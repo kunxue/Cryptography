@@ -121,10 +121,10 @@ primenumber(this.p));
     {
         this.getText();
         System.out.println("plaintext is : "+this.text);
-        //加密
+        //
         this.secretword=this.colum(this.text,this.n,this.public_key);
         System.out.println("ciphertext is ："+this.secretword);
-        //解密
+        //
         this.word=this.colum(this.secretword,this.n,this.private_key);
         System.out.println("original plaintext is ："+this.word);
 
