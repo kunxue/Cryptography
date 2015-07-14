@@ -7,14 +7,14 @@ public class rsaExample
     private long n=0;
     private long m=0;
 
-    private long public_key=0;//公匙
-    private long private_key=0;//密匙
+    private long public_key=0;//public key
+    private long private_key=0;//private key
 
-    private long text=0;//明文
-    private long secretword=0;//密文
-    private long word=0;//解密后明文
+    private long text=0;//plain text
+    private long secretword=0;//secret text
+    private long word=0;//text decripted
 
-    //判断是否为素数
+    //wheter it is a prime number
     public boolean primenumber(long t)
     {
         long k=0;
@@ -30,7 +30,7 @@ public class rsaExample
         }
         return flag;
     }
-    //输入PQ
+    //input pq
     public void inputPQ()throws Exception
     {
         do{
@@ -54,7 +54,7 @@ primenumber(this.p));
         System.out.println("p*q："+this.n);
         System.out.println("m=(p-1)(q-1)："+this.m);
     }
-    //求最大公约数
+    //
     public long gcd(long a,long b)
     {
         long gcd;
@@ -66,7 +66,7 @@ primenumber(this.p));
         return gcd;
 
     }
-    //输入公匙
+    //
     public void getPublic_key()throws Exception
     {
         do{
@@ -80,7 +80,7 @@ primenumber(this.p));
 
         System.out.println("public key is ："+this.public_key);
     }
-    //计算得到密匙
+    //
     public void getPrivate_key()
     {
         long value=1;
@@ -96,7 +96,7 @@ primenumber(this.p));
         }
         System.out.println("private key is："+this.private_key);
     }
-    //输入明文
+    //
     public void getText()throws Exception
     {
         System.out.println("please input plaintext：");
@@ -105,7 +105,7 @@ primenumber(this.p));
         this.text=Long.parseLong(br);
 
  }
-    //加密、解密计算
+    //
     public long colum(long y,long n,long key)
     {
         long mul;
@@ -116,7 +116,7 @@ primenumber(this.p));
         return mul;
     }
 
-    //加密后解密
+    //
     public void pascolum()throws Exception
     {
         this.getText();
