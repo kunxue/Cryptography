@@ -1,0 +1,155 @@
+Code Examples
+This section is a short tutorial on how to use some of the major features of the JCE APIs in the Java 2 SDK, v 1.4. Complete sample programs that exercise the APIs can be found in Appendix F of this document. 
+
+Using Encryption
+This section takes the user through the process of generating a key, creating and initializing a cipher object, encrypting a file, and then decrypting it. Throughout this example, we use the Data Encryption Standard (DES). 
+
+Generating a Key
+To create a DES key, we have to instantiate a KeyGenerator for DES. We do not specify a provider, because we do not care about a particular DES key generation implementation. Since we do not initialize the KeyGenerator, a system-provided source of randomness will be used to create the DES key: 
+
+    KeyGenerator keygen = KeyGenerator.getInstance("DES");
+    SecretKey desKey = keygen.generateKey();
+
+After the key has been generated, the same KeyGenerator object can be re-used to create further keys. 
+
+Creating a Cipher
+The next step is to create a Cipher instance. To do this, we use one of the getInstance factory methods of the Cipher class. We must specify the name of the requested transformation, which includes the following components, separated by slashes (/): 
+
+the algorithm name 
+the mode (optional) 
+the padding scheme (optional) 
+In this example, we create a DES (Data Encryption Standard) cipher in Electronic Codebook mode, with PKCS #5-style padding. We do not specify a provider, because we do not care about a particular implementation of the requested transformation. 
+
+The standard algorithm name for DES is "DES", the standard name for the Electronic Codebook mode is "ECB", and the standard name for PKCS #5-style padding is "PKCS5Padding": 
+
+    Cipher desCipher;
+
+    // Create the cipher 
+    desCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
+
+We use the generated desKey from above to initialize the Cipher object for encryption: 
+
+    // Initialize the cipher for encryption
+    desCipher.init(Cipher.ENCRYPT_MODE, desKey);
+
+    // Our cleartext
+    byte[] cleartext = "This is just an example".getBytes();
+
+    // Encrypt the cleartext
+    byte[] ciphertext = desCipher.doFinal(cleartext);
+
+    // Initialize the same cipher for decryption
+    desCipher.init(Cipher.DECRYPT_MODE, desKey);
+
+    // Decrypt the ciphertext
+    byte[] cleartext1 = desCipher.doFinal(ciphertext);
+
+cleartext and cleartext1 are identical. 
+
+Using Password-Based Encryption
+In this example, we prompt the user for a password from which we derive an encryption key. 
+
+It would seem logical to collect and store the password in an object of type java.lang.String. However, here's the caveat: Objects of type String are immutable, i.e., there are no methods defined that allow you to change (overwrite) or zero out the contents of a String after usage. This feature makes String objects unsuitable for storing security sensitive information such as user passwords. You should always collect and store security sensitive information in a char array instead. 
+
+For that reason, the javax.crypto.spec.PBEKeySpec class takes (and returns) a password as a char array. 
+
+The following method is an example of how to collect a user password as a char array: 
+
+    /**
+     * Reads user password from given input stream.
+     */
+    public char[] readPasswd(InputStream in) throws IOException {
+        char[] lineBuffer;
+        char[] buf;
+        int i;
+
+        buf = lineBuffer = new char[128];
+
+        int room = buf.length;
+        int offset = 0;
+        int c;
+
+loop:   while (true) {
+            switch (c = in.read()) {
+              case -1: 
+              case '\n':
+                break loop;
+
+              case '\r':
+                int c2 = in.read();
+                if ((c2 != '\n') && (c2 != -1)) {
+                    if (!(in instanceof PushbackInputStream)) {
+                        in = new PushbackInputStream(in);
+                    }
+                    ((PushbackInputStream)in).unread(c2);
+                } else 
+                    break loop;
+
+              default:
+                if (--room < 0) {
+                    buf = new char[offset + 128];
+                    room = buf.length - offset - 1;
+                    System.arraycopy(lineBuffer, 0, buf, 0, offset);
+                    Arrays.fill(lineBuffer, ' ');
+                    lineBuffer = buf;
+                }
+                buf[offset++] = (char) c;
+                break;
+            }
+        }
+
+        if (offset == 0) {
+            return null;
+        }
+
+        char[] ret = new char[offset];
+        System.arraycopy(buf, 0, ret, 0, offset);
+        Arrays.fill(buf, ' ');
+
+        return ret;
+    }
+
+In order to use Password-Based Encryption (PBE) as defined in PKCS #5, we have to specify a salt and an iteration count. The same salt and iteration count that are used for encryption must be used for decryption: 
+
+    PBEKeySpec pbeKeySpec;
+    PBEParameterSpec pbeParamSpec;
+    SecretKeyFactory keyFac;
+
+    // Salt
+    byte[] salt = {
+        (byte)0xc7, (byte)0x73, (byte)0x21, (byte)0x8c,
+        (byte)0x7e, (byte)0xc8, (byte)0xee, (byte)0x99
+    };
+
+    // Iteration count
+    int count = 20;
+
+    // Create PBE parameter set
+    pbeParamSpec = new PBEParameterSpec(salt, count);
+
+    // Prompt user for encryption password.
+    // Collect user password as char array (using the
+    // "readPasswd" method from above), and convert
+    // it into a SecretKey object, using a PBE key
+    // factory.
+    System.out.print("Enter encryption password:  ");
+    System.out.flush();
+    pbeKeySpec = new PBEKeySpec(readPasswd(System.in));
+    keyFac = SecretKeyFactory.getInstance("PBEWithMD5AndDES");
+    SecretKey pbeKey = keyFac.generateSecret(pbeKeySpec);
+
+    // Create PBE Cipher
+    Cipher pbeCipher = Cipher.getInstance("PBEWithMD5AndDES");
+
+    // Initialize PBE Cipher with key and parameters
+    pbeCipher.init(Cipher.ENCRYPT_MODE, pbeKey, pbeParamSpec);
+
+    // Our cleartext
+    byte[] cleartext = "This is another example".getBytes();
+
+    // Encrypt the cleartext
+    byte[] ciphertext = pbeCipher.doFinal(cleartext);
+
+Using Key Agreement
+Please refer to Appendix F for sample programs exercising the Diffie-Hellman key exchange between 2 and 3 parties, respectively. 
+
